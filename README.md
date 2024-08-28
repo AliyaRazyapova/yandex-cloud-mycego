@@ -23,7 +23,7 @@
 
    ```bash
    git clone https://github.com/AliyaRazyapova/yandex-cloud-mycego
-   cd calsync
+   cd yandex-cloud-mycego
 
 2. **Настройка окружения:**
 
