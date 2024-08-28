@@ -40,7 +40,7 @@
     
     ```bash
     pip install -r requirements.txt
-       
+
 4. **Выполните миграции базы данных:**
     
    ```bash
