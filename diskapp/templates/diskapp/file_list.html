@@ -19,31 +19,36 @@
         </div>
     </form>
 
-    <div class="card">
-        <div class="card-body">
-            <ul class="list-group">
-                {% for file in files %}
-                    {% if not file_type or file.type == file_type %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>
-                                {% if file.type == "image" %}
-                                    <i class="bi bi-file-earmark-image"></i> {{ file.name }}
-                                {% elif file.type == "document" %}
-                                    <i class="bi bi-file-earmark-text"></i> {{ file.name }}
-                                {% elif file.type == "spreadsheet" %}
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> {{ file.name }}
-                                {% elif file.type == "presentation" %}
-                                    <i class="bi bi-file-earmark-ppt"></i> {{ file.name }}
-                                {% else %}
-                                    <i class="bi bi-file-earmark"></i> {{ file.name }}
-                                {% endif %}
-                            </span>
-                            <a href="{% url 'download_file' %}?path={{ file.path|urlencode }}&public_key={{ public_key }}" class="btn btn-primary btn-sm">Скачать</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
+    <form action="{% url 'download_file' %}" method="get">
+        <input type="hidden" name="public_key" value="{{ public_key }}">
+        <div class="card">
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for file in files %}
+                        {% if not file_type or file.type == file_type %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    {% if file.type == "image" %}
+                                        <i class="bi bi-file-earmark-image"></i> {{ file.name }}
+                                    {% elif file.type == "document" %}
+                                        <i class="bi bi-file-earmark-text"></i> {{ file.name }}
+                                    {% elif file.type == "spreadsheet" %}
+                                        <i class="bi bi-file-earmark-spreadsheet"></i> {{ file.name }}
+                                    {% elif file.type == "presentation" %}
+                                        <i class="bi bi-file-earmark-ppt"></i> {{ file.name }}
+                                    {% else %}
+                                        <i class="bi bi-file-earmark"></i> {{ file.name }}
+                                    {% endif %}
+                                </span>
+                                <input type="checkbox" name="paths" value="{{ file.path }}">
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+                <button type="submit" class="btn btn-primary mt-3">Скачать выбранные файлы</button>
+            </div>
         </div>
-    </div>
+    </form>
+
     <a href="{% url 'index' %}" class="btn btn-secondary mt-3">Назад</a>
 {% endblock %}

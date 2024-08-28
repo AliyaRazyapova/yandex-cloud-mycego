@@ -1,4 +1,7 @@
 import requests
+import zipfile
+import io
+from django.utils.encoding import smart_str
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, Http404
 from django.http import HttpRequest, HttpResponseBase
@@ -78,25 +81,22 @@ def download_file(request: HttpRequest) -> HttpResponseBase:
     :param request: Объект запроса от клиента.
     :return: HttpResponse с содержимым файла для скачивания или ошибка.
     """
-    path: Optional[str] = request.GET.get("path")
-    public_key: Optional[str] = request.GET.get("public_key")
+    paths = request.GET.getlist("paths")
+    public_key = request.GET.get("public_key")
 
-    if not path or not public_key:
+    if not public_key or not paths:
         return redirect("index")
 
-    download_url: str = f"{yandex_cloud_mycego.settings.YANDEX_DISK_API_URL}/download"
-    response = requests.get(download_url, params={"public_key": public_key, "path": path})
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for path in paths:
+            file_response = requests.get(f"{yandex_cloud_mycego.settings.YANDEX_DISK_API_URL}/download", params={"public_key": public_key, "path": path})
+            if file_response.status_code == 200:
+                file_url = file_response.json()["href"]
+                file_data = requests.get(file_url)
+                if file_data.status_code == 200:
+                    zip_file.writestr(smart_str(path.split("/")[-1]), file_data.content)
 
-    if response.status_code == 200:
-        file_url: str = response.json()["href"]
-        file_response = requests.get(file_url)
-
-        if file_response.status_code == 200:
-            file_name: str = path.split("/")[-1]
-            response = HttpResponse(file_response.content, content_type="application/octet-stream")
-            response["Content-Disposition"] = f"attachment; filename={file_name}"
-            return response
-        else:
-            return HttpResponse("Не удалось скачать файл.", status=400)
-    else:
-        return HttpResponse("Не удалось получить ссылку на скачивание.", status=400)
+    response = HttpResponse(zip_buffer.getvalue(), content_type="application/zip")
+    response["Content-Disposition"] = 'attachment; filename="files.zip"'
+    return response
