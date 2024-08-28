@@ -1,0 +1,28 @@
+{% extends "diskapp/base.html" %}
+
+{% block title %}Список файлов{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Файлы на Яндекс.Диске</h1>
+    <div class="card">
+        <div class="card-body">
+            <ul class="list-group">
+                {% for file in files %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            {% if file.type == "dir" %}
+                                <i class="bi bi-folder-fill"></i> <strong>{{ file.name }}/</strong>
+                            {% else %}
+                                <i class="bi bi-file-earmark-fill"></i> {{ file.name }}
+                            {% endif %}
+                        </span>
+                        {% if file.type != "dir" %}
+                            <a href="{% url 'download_file' %}?path={{ file.path|urlencode }}&public_key={{ public_key }}" class="btn btn-primary btn-sm">Скачать</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <a href="{% url 'index' %}" class="btn btn-secondary mt-3">Назад</a>
+{% endblock %}
