@@ -1,6 +1,7 @@
 import requests
 import zipfile
 import io
+from django.core.cache import cache
 from django.utils.encoding import smart_str
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, Http404
@@ -8,6 +9,9 @@ from django.http import HttpRequest, HttpResponseBase
 from typing import Optional, Dict, Any
 
 import yandex_cloud_mycego.settings
+
+
+CACHE_TIMEOUT = 300
 
 
 def index(request: HttpRequest) -> HttpResponseBase:
@@ -60,10 +64,14 @@ def files_list(request: HttpRequest) -> HttpResponseBase:
     if not public_key:
         return redirect("index")
 
-    response = requests.get(yandex_cloud_mycego.settings.YANDEX_DISK_API_URL, params={"public_key": public_key})
+    cache_key = f"files_list_{public_key}"
+    files = cache.get(cache_key)
 
-    if response.status_code == 200:
-        files: Dict[str, Any] = response.json()["_embedded"]["items"]
+    if not files:
+        response = requests.get(yandex_cloud_mycego.settings.YANDEX_DISK_API_URL, params={"public_key": public_key})
+
+        if response.status_code == 200:
+            files: Dict[str, Any] = response.json()["_embedded"]["items"]
 
         for file in files:
             file["type"] = determine_file_type(file["name"])
