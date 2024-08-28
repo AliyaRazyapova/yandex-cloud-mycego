@@ -17,14 +17,43 @@ def index(request: HttpRequest) -> HttpResponseBase:
     return render(request, "diskapp/index.html")
 
 
+def determine_file_type(file_name: str) -> str:
+    """
+    Определяет тип файла на основе его расширения.
+
+    :param file_name: Имя файла.
+    :return: Тип файла (image, document, spreadsheet, presentation или other).
+    """
+    image_extensions: List[str] = ["jpg", "jpeg", "png", "gif", "bmp"]
+    document_extensions: List[str] = ["pdf", "doc", "docx", "txt"]
+    spreadsheet_extensions: List[str] = ["xls", "xlsx"]
+    presentation_extensions: List[str] = ["ppt", "pptx"]
+
+    extension = file_name.rsplit(".", 1)[-1].lower() if "." in file_name else ""
+
+    if extension in image_extensions:
+        return "image"
+    elif extension in document_extensions:
+        return "document"
+    elif extension in spreadsheet_extensions:
+        return "spreadsheet"
+    elif extension in presentation_extensions:
+        return "presentation"
+    else:
+        return "other"
+
+
 def files_list(request: HttpRequest) -> HttpResponseBase:
     """
     Обрабатывает запрос для получения списка файлов на Яндекс.Диске по публичной ссылке.
+    Возможность фильтрации файлов по типу (изображения, документы, таблицы, презентации, альбомы и т.д.).
 
     :param request: Объект запроса от клиента.
     :return: HttpResponse с рендером шаблона file_list.html или редирект на главную страницу.
     """
     public_key: Optional[str] = request.GET.get("public_key")
+    file_type: Optional[str] = request.GET.get("file_type")
+
     if not public_key:
         return redirect("index")
 
@@ -32,7 +61,12 @@ def files_list(request: HttpRequest) -> HttpResponseBase:
 
     if response.status_code == 200:
         files: Dict[str, Any] = response.json()["_embedded"]["items"]
-        return render(request, "diskapp/file_list.html", {"files": files, "public_key": public_key})
+
+        for file in files:
+            file["type"] = determine_file_type(file["name"])
+
+        return render(request, "diskapp/file_list.html",
+                      {"files": files, "public_key": public_key, "file_type": file_type})
     else:
         return HttpResponse("Не удалось получить список файлов.", status=400)
 
